@@ -74,17 +74,9 @@ jobs:
         with:
           directory: terraform/
           framework: terraform
-          output_format: sarif
-          output_file_path: checkov.sarif
           soft_fail: false
           skip_check: CKV_AWS_144
         continue-on-error: true
-
-      - name: Upload Checkov SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: checkov.sarif
 
   ###########################################################################
   # Stage 2: Plan (all environments in parallel)
