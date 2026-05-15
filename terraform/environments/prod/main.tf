@@ -76,10 +76,9 @@ module "vpc" {
 # ECR lives in the primary region; secondary nodes pull cross-region.
 # Enable ECR replication rules in the AWS console if cross-region pull latency is a concern.
 module "ecr" {
-  source              = "../../modules/ecr"
-  prefix              = "online-boutique"
-  allowed_account_ids = var.allowed_account_ids
-  tags                = local.common_tags
+  source = "../../modules/ecr"
+  prefix = "online-boutique"
+  tags   = local.common_tags
 }
 
 module "eks" {

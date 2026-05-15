@@ -1,0 +1,76 @@
+# Production environment overrides — full HA
+global:
+  environment: prod
+  imagePullPolicy: Always
+
+services:
+  frontend:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 200m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    hpa:
+      minReplicas: 3
+      maxReplicas: 20
+
+  cartservice:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 300m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    hpa:
+      minReplicas: 3
+      maxReplicas: 15
+
+  productcatalogservice:
+    replicas: 3
+    hpa:
+      minReplicas: 3
+
+  currencyservice:
+    replicas: 4   # highest QPS service
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 400m
+        memory: 512Mi
+    hpa:
+      minReplicas: 4
+      maxReplicas: 20
+
+  paymentservice:
+    replicas: 3
+  shippingservice:
+    replicas: 3
+  emailservice:
+    replicas: 2
+  checkoutservice:
+    replicas: 3
+    hpa:
+      minReplicas: 3
+  recommendationservice:
+    replicas: 3
+  adservice:
+    replicas: 3
+  loadgenerator:
+    enabled: false   # not deployed in prod
+
+ingress:
+  host: "www.online-boutique.boutique-team.com"
+  certArn: "PLACEHOLDER_PROD_CERT_ARN"
+  albLogsBucket: "online-boutique-prod-alb-logs"
+
+externalSecrets:
+  redisSecretPath: "online-boutique-prod/redis/auth-token"
+  # terraform -chdir=terraform/environments/prod output -raw external_secrets_role_arn
+  roleArn: ""

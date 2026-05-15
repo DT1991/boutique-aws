@@ -1,0 +1,27 @@
+# Staging environment overrides — UAT, load generator disabled
+global:
+  environment: staging
+
+services:
+  frontend:
+    replicas: 2
+    hpa:
+      minReplicas: 2
+  cartservice:
+    replicas: 2
+  currencyservice:
+    replicas: 2
+  checkoutservice:
+    replicas: 2
+  loadgenerator:
+    enabled: false   # no load testing in staging
+
+ingress:
+  host: "staging.online-boutique.boutique-team.com"
+  certArn: "PLACEHOLDER_STAGING_CERT_ARN"
+  albLogsBucket: "online-boutique-staging-alb-logs"
+
+externalSecrets:
+  redisSecretPath: "online-boutique-staging/redis/auth-token"
+  # terraform -chdir=terraform/environments/staging output -raw external_secrets_role_arn
+  roleArn: ""

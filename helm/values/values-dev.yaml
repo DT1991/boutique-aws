@@ -1,0 +1,44 @@
+# Dev environment overrides
+global:
+  environment: dev
+  tag: dev-latest
+
+services:
+  frontend:
+    replicas: 1
+    hpa:
+      enabled: false
+  cartservice:
+    replicas: 1
+    hpa:
+      enabled: false
+  productcatalogservice:
+    replicas: 1
+  currencyservice:
+    replicas: 1
+  paymentservice:
+    replicas: 1
+  shippingservice:
+    replicas: 1
+  emailservice:
+    replicas: 1
+  checkoutservice:
+    replicas: 1
+  recommendationservice:
+    replicas: 1
+  adservice:
+    replicas: 1
+  loadgenerator:
+    enabled: true
+    env:
+      USERS: "5"
+
+ingress:
+  host: "dev.online-boutique.boutique-team.com"
+  certArn: "PLACEHOLDER_DEV_CERT_ARN"
+  albLogsBucket: "online-boutique-dev-alb-logs"
+
+externalSecrets:
+  redisSecretPath: "online-boutique-dev/redis/auth-token"
+  # terraform -chdir=terraform/environments/dev output -raw external_secrets_role_arn
+  roleArn: ""

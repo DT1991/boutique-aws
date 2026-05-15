@@ -1,0 +1,22 @@
+apiVersion: v2
+name: online-boutique
+description: >
+  Online Boutique (GoogleCloudPlatform/microservices-demo) — AWS EKS deployment.
+  Umbrella Helm chart covering all 11 microservices.
+
+type: application
+version: 0.1.0
+appVersion: "0.9.0"
+
+keywords:
+  - microservices
+  - ecommerce
+  - online-boutique
+
+maintainers:
+  - name: platform-team
+    email: platform@boutique-team.com
+
+dependencies: []
+# No sub-chart dependencies; all service templates are colocated in this chart.
+# Individual services can be toggled via services.<name>.enabled in values.yaml.

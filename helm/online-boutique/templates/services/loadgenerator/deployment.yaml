@@ -1,0 +1,53 @@
+{{- $svc := .Values.services.loadgenerator }}
+{{- if $svc.enabled }}
+---
+# loadgenerator: enabled in dev/test/perf only (disabled via enabled: false in values-prod.yaml)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: loadgenerator
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "loadgenerator") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" (dict "name" "loadgenerator") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "online-boutique.podSecurityContext" . | nindent 8 }}
+      restartPolicy: Always
+      initContainers:
+        - name: wait-frontend
+          image: busybox:latest
+          command: ['sh', '-c', 'until nslookup frontend.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do sleep 2; done']
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      containers:
+        - name: main
+          image: {{ include "online-boutique.image" (dict "svc" $svc "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            {{- range $k, $v := $svc.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          securityContext:
+            {{- include "online-boutique.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

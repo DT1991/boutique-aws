@@ -1,0 +1,480 @@
+###############################################################################
+# Online Boutique — Service CI/CD Pipeline
+# Build → Test → Push ECR → Deploy (dev → test → perf → staging → prod)
+###############################################################################
+
+name: Service Pipeline
+
+on:
+  push:
+    branches: [main, "release/**"]
+    paths-ignore: ["terraform/**", "docs/**", "*.md"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [dev, test, perf, staging, prod]
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-1.amazonaws.com
+  IMAGE_PREFIX: online-boutique
+  HELM_CHART: helm/online-boutique
+  HELM_NAMESPACE: online-boutique
+
+permissions:
+  contents: read
+  id-token: write
+  security-events: write
+
+jobs:
+  ###########################################################################
+  # Stage 1: Detect changed services
+  ###########################################################################
+  detect-changes:
+    name: "Stage 1: Detect changes"
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:              ['src/frontend/**']
+            cartservice:           ['src/cartservice/**']
+            productcatalogservice: ['src/productcatalogservice/**']
+            currencyservice:       ['src/currencyservice/**']
+            paymentservice:        ['src/paymentservice/**']
+            shippingservice:       ['src/shippingservice/**']
+            emailservice:          ['src/emailservice/**']
+            checkoutservice:       ['src/checkoutservice/**']
+            recommendationservice: ['src/recommendationservice/**']
+            adservice:             ['src/adservice/**']
+            loadgenerator:         ['src/loadgenerator/**']
+            helm:                  ['helm/**']
+
+  ###########################################################################
+  # Stage 2: Helm lint
+  ###########################################################################
+  helm-lint:
+    name: "Stage 2: Helm lint"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Lint with all value files
+        run: |
+          for env in dev test perf staging prod; do
+            echo "=== Linting ${env} ==="
+            helm lint ${{ env.HELM_CHART }} \
+              -f ${{ env.HELM_CHART }}/values.yaml \
+              -f helm/values/values-${env}.yaml \
+              --strict
+          done
+
+      - name: Template render check (prod)
+        run: |
+          helm template online-boutique ${{ env.HELM_CHART }} \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-prod.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-dryrun \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            > /dev/null && echo "Template render OK"
+
+  ###########################################################################
+  # Stage 3: Unit tests (parallelized by language)
+  ###########################################################################
+  test-go:
+    name: "Stage 3: Test Go"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      contains(needs.detect-changes.outputs.services, 'frontend') ||
+      contains(needs.detect-changes.outputs.services, 'productcatalogservice') ||
+      contains(needs.detect-changes.outputs.services, 'shippingservice') ||
+      contains(needs.detect-changes.outputs.services, 'checkoutservice')
+    strategy:
+      matrix:
+        service: [frontend, productcatalogservice, shippingservice, checkoutservice]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: src/${{ matrix.service }}/go.sum
+      - uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.58
+          working-directory: src/${{ matrix.service }}
+      - run: go test ./... -v -race
+        working-directory: src/${{ matrix.service }}
+
+  test-nodejs:
+    name: "Stage 3: Test Node.js"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      contains(needs.detect-changes.outputs.services, 'currencyservice') ||
+      contains(needs.detect-changes.outputs.services, 'paymentservice')
+    strategy:
+      matrix:
+        service: [currencyservice, paymentservice]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: src/${{ matrix.service }}/package-lock.json
+      - run: npm ci && npm test
+        working-directory: src/${{ matrix.service }}
+
+  test-python:
+    name: "Stage 3: Test Python"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      contains(needs.detect-changes.outputs.services, 'emailservice') ||
+      contains(needs.detect-changes.outputs.services, 'recommendationservice')
+    strategy:
+      matrix:
+        service: [emailservice, recommendationservice]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt && python -m pytest -v
+        working-directory: src/${{ matrix.service }}
+
+  test-dotnet:
+    name: "Stage 3: Test .NET"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.services, 'cartservice')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0"
+      - run: dotnet test
+        working-directory: src/cartservice
+
+  test-java:
+    name: "Stage 3: Test Java"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.services, 'adservice')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: gradle
+      - run: ./gradlew test
+        working-directory: src/adservice
+
+  ###########################################################################
+  # Stage 4: Trivy security scan
+  ###########################################################################
+  security-scan:
+    name: "Stage 4: Security scan"
+    runs-on: ubuntu-latest
+    needs: [helm-lint, test-go, test-nodejs, test-python, test-dotnet, test-java]
+    if: always() && !cancelled() && !failure()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: src/
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  ###########################################################################
+  # Stage 5: Build & Push images (all services in parallel)
+  ###########################################################################
+  build:
+    name: "Stage 5: Build (${{ matrix.service }})"
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - frontend
+          - cartservice
+          - productcatalogservice
+          - currencyservice
+          - paymentservice
+          - shippingservice
+          - emailservice
+          - checkoutservice
+          - recommendationservice
+          - adservice
+          - loadgenerator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_BUILD }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
+        with:
+          context: src/${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          provenance: true
+          sbom: true
+      - name: Image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:sha-${{ github.sha }}
+          severity: CRITICAL
+          exit-code: "1"
+
+  ###########################################################################
+  # Stage 6: Deploy dev (automatic)
+  ###########################################################################
+  deploy-dev:
+    name: "Stage 6: Deploy dev"
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: dev
+      url: https://dev.online-boutique.boutique-team.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws eks update-kubeconfig --name online-boutique-dev --region ${{ env.AWS_REGION }}
+      - name: helm upgrade
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --create-namespace \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-dev.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} \
+            --set ingress.certArn=${{ secrets.DEV_ACM_CERT_ARN }} \
+            --set externalSecrets.roleArn=${{ secrets.DEV_ESO_ROLE_ARN }} \
+            --atomic --timeout 10m --wait
+      - name: Smoke test
+        run: |
+          sleep 20
+          curl -f https://dev.online-boutique.boutique-team.com/_healthz
+
+  ###########################################################################
+  # Stage 7: Integration tests
+  ###########################################################################
+  integration-tests:
+    name: "Stage 7: Integration tests"
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install locust requests
+          python tests/e2e/run_tests.py \
+            --base-url=https://dev.online-boutique.boutique-team.com \
+            --users=5 --duration=60s
+
+  ###########################################################################
+  # Stage 8: Deploy test
+  ###########################################################################
+  deploy-test:
+    name: "Stage 8: Deploy test"
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    environment:
+      name: test
+      url: https://test.online-boutique.boutique-team.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TEST }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws eks update-kubeconfig --name online-boutique-test --region ${{ env.AWS_REGION }}
+      - run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --create-namespace \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-test.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} \
+            --set externalSecrets.roleArn=${{ secrets.TEST_ESO_ROLE_ARN }} \
+            --atomic --timeout 10m --wait
+
+  ###########################################################################
+  # Stage 9: Deploy perf
+  ###########################################################################
+  deploy-perf:
+    name: "Stage 9: Deploy perf"
+    runs-on: ubuntu-latest
+    needs: deploy-test
+    environment:
+      name: perf
+      url: https://perf.online-boutique.boutique-team.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PERF }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws eks update-kubeconfig --name online-boutique-perf --region ${{ env.AWS_REGION }}
+      - run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --create-namespace \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-perf.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} \
+            --set externalSecrets.roleArn=${{ secrets.PERF_ESO_ROLE_ARN }} \
+            --atomic --timeout 15m --wait
+
+  ###########################################################################
+  # Stage 10: Deploy staging (requires approval)
+  ###########################################################################
+  deploy-staging:
+    name: "Stage 10: Deploy staging"
+    runs-on: ubuntu-latest
+    needs: deploy-perf
+    environment:
+      name: staging
+      url: https://staging.online-boutique.boutique-team.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws eks update-kubeconfig --name online-boutique-staging --region ${{ env.AWS_REGION }}
+      - run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --create-namespace \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-staging.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} \
+            --set externalSecrets.roleArn=${{ secrets.STAGING_ESO_ROLE_ARN }} \
+            --atomic --timeout 15m --wait
+
+  ###########################################################################
+  # Stage 11: Deploy prod (requires approval)
+  ###########################################################################
+  deploy-prod:
+    name: "Stage 11: Deploy prod"
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment:
+      name: prod
+      url: https://www.online-boutique.boutique-team.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws eks update-kubeconfig --name online-boutique-prod --region ${{ env.AWS_REGION }}
+
+      - name: helm diff (dry-run)
+        run: |
+          helm plugin install https://github.com/databus23/helm-diff 2>/dev/null || true
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm diff upgrade online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-prod.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} || true
+
+      - name: helm upgrade
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --create-namespace \
+            -f ${{ env.HELM_CHART }}/values.yaml \
+            -f helm/values/values-prod.yaml \
+            --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set global.tag=sha-${SHORT_SHA} \
+            --set ingress.certArn=${{ secrets.PROD_ACM_CERT_ARN }} \
+            --set externalSecrets.roleArn=${{ secrets.PROD_ESO_ROLE_ARN }} \
+            --atomic \
+            --timeout 20m \
+            --wait \
+            --history-max 10
+
+      - run: kubectl rollout status deployment -n ${{ env.HELM_NAMESPACE }} --timeout=300s
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "#deployments"
+          slack-message: |
+            ${{ job.status == 'success' && 'Prod deploy success' || 'Prod deploy FAILED' }}
+            Tag: sha-${{ github.sha }}  By: ${{ github.actor }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

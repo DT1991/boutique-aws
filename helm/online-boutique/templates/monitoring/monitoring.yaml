@@ -1,0 +1,97 @@
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "online-boutique.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "online-boutique.fullname" . }}-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: online-boutique.availability
+      interval: 30s
+      rules:
+        - alert: ServiceDown
+          expr: up{namespace={{ .Release.Namespace | quote }}} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+            environment: {{ .Values.global.environment }}
+          annotations:
+            summary: "{{ "{{" }} $labels.job {{ "}}" }} is down"
+            runbook: "https://wiki.boutique-team.com/runbooks/service-down"
+
+        - alert: HighGRPCErrorRate
+          expr: |
+            rate(grpc_server_handled_total{namespace={{ .Release.Namespace | quote }},grpc_code!="OK"}[5m])
+            /
+            rate(grpc_server_handled_total{namespace={{ .Release.Namespace | quote }}}[5m])
+            > {{ .Values.monitoring.alerts.errorRateThreshold }}
+          for: 5m
+          labels:
+            severity: warning
+            environment: {{ .Values.global.environment }}
+          annotations:
+            summary: "High gRPC error rate on {{ "{{" }} $labels.job {{ "}}" }}"
+
+        - alert: HighLatencyP99
+          expr: |
+            histogram_quantile(0.99,
+              rate(grpc_server_handling_seconds_bucket{namespace={{ .Release.Namespace | quote }}}[5m])
+            ) > {{ .Values.monitoring.alerts.latencyP99Threshold }}
+          for: 5m
+          labels:
+            severity: warning
+            environment: {{ .Values.global.environment }}
+          annotations:
+            summary: "P99 latency > {{ .Values.monitoring.alerts.latencyP99Threshold }}s on {{ "{{" }} $labels.job {{ "}}" }}"
+
+        - alert: CartServiceDown
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace={{ .Release.Namespace | quote }},
+              deployment="cartservice"
+            } == 0
+          for: 1m
+          labels:
+            severity: critical
+            environment: {{ .Values.global.environment }}
+          annotations:
+            summary: "cartservice has 0 available replicas"
+            description: "Check ElastiCache Redis endpoint and redis-credentials Secret"
+
+        - alert: HPAMaxReplicasReached
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace={{ .Release.Namespace | quote }}}
+            ==
+            kube_horizontalpodautoscaler_spec_max_replicas{namespace={{ .Release.Namespace | quote }}}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA {{ "{{" }} $labels.horizontalpodautoscaler {{ "}}" }} at max replicas"
+{{- end }}

@@ -20,11 +20,6 @@ variable "redis_num_cache_nodes" { type = number }
 variable "redis_snapshot_retention_days" { type = number }
 variable "s3_log_retention_days" { type = number }
 
-variable "allowed_account_ids" {
-  type    = list(string)
-  default = []
-}
-
 # Secondary region (DR / active-active)
 variable "secondary_region" { type = string }
 variable "secondary_vpc_cidr" { type = string }
