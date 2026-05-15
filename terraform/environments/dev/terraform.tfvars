@@ -20,3 +20,4 @@ redis_num_cache_nodes          = 1
 redis_snapshot_retention_days  = 0
 
 s3_force_destroy           = true
+
