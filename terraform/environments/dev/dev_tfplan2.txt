@@ -1,0 +1,242 @@
+Acquiring state lock. This may take a few moments...
+module.redis.random_password.auth: Refreshing state... [id=none]
+module.eks.data.aws_eks_addon_version.coredns: Reading...
+module.eks.data.aws_partition.current: Reading...
+module.s3.data.aws_caller_identity.current: Reading...
+module.eks.data.aws_eks_addon_version.kube_proxy: Reading...
+module.eks.data.aws_eks_addon_version.ebs_csi: Reading...
+module.s3.data.aws_elb_service_account.main: Reading...
+module.eks.data.aws_eks_addon_version.vpc_cni: Reading...
+module.vpc.aws_vpc.main: Refreshing state... [id=vpc-061c0b03ca55c96fa]
+module.eks.aws_iam_role.cluster: Refreshing state... [id=online-boutique-dev-cluster-role]
+module.redis.aws_elasticache_parameter_group.main: Refreshing state... [id=online-boutique-dev-redis-redis-params]
+module.s3.data.aws_elb_service_account.main: Read complete after 0s [id=582318560864]
+module.eks.data.aws_partition.current: Read complete after 0s [id=aws]
+module.vpc.aws_cloudwatch_log_group.flow_logs: Refreshing state... [id=/aws/vpc/online-boutique-dev/flow-logs]
+module.eks.aws_iam_policy.alb_controller: Refreshing state... [id=arn:aws:iam::648332710731:policy/online-boutique-dev-alb-controller-policy]
+module.s3.data.aws_caller_identity.current: Read complete after 0s [id=648332710731]
+module.eks.data.aws_caller_identity.current: Reading...
+module.eks.data.aws_caller_identity.current: Read complete after 1s [id=648332710731]
+module.redis.aws_kms_key.redis: Refreshing state... [id=6b06775b-adae-4066-b65f-434e4099203b]
+module.eks.data.aws_eks_addon_version.kube_proxy: Read complete after 1s [id=kube-proxy]
+module.vpc.aws_iam_role.flow_logs: Refreshing state... [id=online-boutique-dev-vpc-flow-logs]
+module.eks.data.aws_eks_addon_version.vpc_cni: Read complete after 1s [id=vpc-cni]
+module.eks.data.aws_eks_addon_version.coredns: Read complete after 1s [id=coredns]
+module.eks.data.aws_eks_addon_version.ebs_csi: Read complete after 1s [id=aws-ebs-csi-driver]
+module.ecr.aws_ecr_repository.services["emailservice"]: Refreshing state... [id=online-boutique/emailservice]
+module.ecr.aws_ecr_repository.services["checkoutservice"]: Refreshing state... [id=online-boutique/checkoutservice]
+module.ecr.aws_ecr_repository.services["cartservice"]: Refreshing state... [id=online-boutique/cartservice]
+module.ecr.aws_ecr_repository.services["productcatalogservice"]: Refreshing state... [id=online-boutique/productcatalogservice]
+module.ecr.aws_ecr_repository.services["paymentservice"]: Refreshing state... [id=online-boutique/paymentservice]
+module.ecr.aws_ecr_repository.services["loadgenerator"]: Refreshing state... [id=online-boutique/loadgenerator]
+module.ecr.aws_ecr_repository.services["frontend"]: Refreshing state... [id=online-boutique/frontend]
+module.ecr.aws_ecr_repository.services["currencyservice"]: Refreshing state... [id=online-boutique/currencyservice]
+module.ecr.aws_ecr_repository.services["shippingservice"]: Refreshing state... [id=online-boutique/shippingservice]
+module.ecr.aws_ecr_repository.services["recommendationservice"]: Refreshing state... [id=online-boutique/recommendationservice]
+module.ecr.aws_ecr_repository.services["adservice"]: Refreshing state... [id=online-boutique/adservice]
+module.eks.aws_iam_role.nodes: Refreshing state... [id=online-boutique-dev-node-role]
+module.s3.aws_s3_bucket.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.eks.data.aws_iam_policy_document.eks_kms: Reading...
+module.eks.aws_iam_role_policy_attachment.cluster_policy: Refreshing state... [id=online-boutique-dev-cluster-role-20260514155653966400000005]
+module.eks.data.aws_iam_policy_document.eks_kms: Read complete after 0s [id=2443392346]
+module.vpc.aws_iam_role_policy.flow_logs: Refreshing state... [id=online-boutique-dev-vpc-flow-logs:flow-logs]
+module.redis.aws_secretsmanager_secret.redis_auth: Refreshing state... [id=arn:aws:secretsmanager:ap-northeast-1:648332710731:secret:online-boutique-dev-redis/redis/auth-token-y3a0ig]
+module.eks.aws_kms_key.eks: Refreshing state... [id=3942d3c0-7696-40ff-baae-063f8c533717]
+module.vpc.aws_route_table.public: Refreshing state... [id=rtb-0c233984a5f82b290]
+module.vpc.aws_security_group.vpce: Refreshing state... [id=sg-0c5f3d29457a445a9]
+module.vpc.aws_route_table.private[0]: Refreshing state... [id=rtb-0b50d0e39014d9119]
+module.vpc.aws_subnet.database[0]: Refreshing state... [id=subnet-030d1159f6750de91]
+module.vpc.aws_subnet.database[1]: Refreshing state... [id=subnet-08e511c611523af3d]
+module.vpc.aws_subnet.public[0]: Refreshing state... [id=subnet-045337e763baf3182]
+module.vpc.aws_subnet.public[1]: Refreshing state... [id=subnet-03229f8110e70fa6e]
+module.vpc.aws_subnet.private[0]: Refreshing state... [id=subnet-0378f8a9f44a4f7e4]
+module.vpc.aws_subnet.private[1]: Refreshing state... [id=subnet-0da737f08e727923b]
+module.vpc.aws_flow_log.main: Refreshing state... [id=fl-050385445099e3d16]
+module.vpc.aws_internet_gateway.main: Refreshing state... [id=igw-0898da22531ded7f8]
+module.eks.aws_security_group.cluster: Refreshing state... [id=sg-070d308e4f3835c28]
+module.eks.aws_security_group.nodes: Refreshing state... [id=sg-03c9904e4b7157817]
+module.ecr.aws_ecr_lifecycle_policy.services["currencyservice"]: Refreshing state... [id=online-boutique/currencyservice]
+module.ecr.aws_ecr_lifecycle_policy.services["paymentservice"]: Refreshing state... [id=online-boutique/paymentservice]
+module.ecr.aws_ecr_lifecycle_policy.services["emailservice"]: Refreshing state... [id=online-boutique/emailservice]
+module.ecr.aws_ecr_lifecycle_policy.services["adservice"]: Refreshing state... [id=online-boutique/adservice]
+module.ecr.aws_ecr_lifecycle_policy.services["loadgenerator"]: Refreshing state... [id=online-boutique/loadgenerator]
+module.ecr.aws_ecr_lifecycle_policy.services["frontend"]: Refreshing state... [id=online-boutique/frontend]
+module.ecr.aws_ecr_lifecycle_policy.services["recommendationservice"]: Refreshing state... [id=online-boutique/recommendationservice]
+module.ecr.aws_ecr_lifecycle_policy.services["productcatalogservice"]: Refreshing state... [id=online-boutique/productcatalogservice]
+module.ecr.aws_ecr_lifecycle_policy.services["shippingservice"]: Refreshing state... [id=online-boutique/shippingservice]
+module.ecr.aws_ecr_lifecycle_policy.services["checkoutservice"]: Refreshing state... [id=online-boutique/checkoutservice]
+module.ecr.aws_ecr_lifecycle_policy.services["cartservice"]: Refreshing state... [id=online-boutique/cartservice]
+module.eks.aws_iam_role_policy_attachment.nodes["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]: Refreshing state... [id=online-boutique-dev-node-role-20260514155653651500000004]
+module.eks.aws_iam_role_policy_attachment.nodes["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"]: Refreshing state... [id=online-boutique-dev-node-role-20260514155653608600000003]
+module.eks.aws_iam_role_policy_attachment.nodes["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"]: Refreshing state... [id=online-boutique-dev-node-role-20260514155653356800000002]
+module.eks.aws_iam_role_policy_attachment.nodes["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]: Refreshing state... [id=online-boutique-dev-node-role-20260514155652981000000001]
+module.eks.aws_kms_alias.eks: Refreshing state... [id=alias/online-boutique-dev-eks]
+module.vpc.aws_vpc_endpoint.s3: Refreshing state... [id=vpce-0b1c14310266b1932]
+module.vpc.aws_route_table_association.public[0]: Refreshing state... [id=rtbassoc-03c36882b682cab01]
+module.vpc.aws_route_table_association.public[1]: Refreshing state... [id=rtbassoc-003b36afa5a050797]
+module.vpc.aws_vpc_endpoint.ecr_api: Refreshing state... [id=vpce-085ba2f27092a3dbd]
+module.vpc.aws_vpc_endpoint.ecr_dkr: Refreshing state... [id=vpce-0668f54e9718ff987]
+module.vpc.aws_route_table_association.private[0]: Refreshing state... [id=rtbassoc-03528b9874f6cfd66]
+module.vpc.aws_route_table_association.private[1]: Refreshing state... [id=rtbassoc-0ef98b2c16a89be73]
+module.vpc.aws_route.public_internet: Refreshing state... [id=r-rtb-0c233984a5f82b2901080289494]
+module.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-0ce191f5a640a7a92]
+module.eks.aws_security_group_rule.nodes_from_cluster: Refreshing state... [id=sgrule-3240770352]
+module.eks.aws_launch_template.nodes: Refreshing state... [id=lt-0ece647e784ed8d29]
+module.eks.aws_security_group_rule.cluster_from_nodes: Refreshing state... [id=sgrule-1271524219]
+module.eks.aws_security_group_rule.nodes_self: Refreshing state... [id=sgrule-1025842145]
+module.eks.aws_eks_cluster.main: Refreshing state... [id=online-boutique-dev]
+module.redis.aws_elasticache_subnet_group.main: Refreshing state... [id=online-boutique-dev-redis-redis-subnet]
+module.redis.aws_security_group.redis: Refreshing state... [id=sg-0f67c11faba0b167d]
+module.eks.aws_eks_addon.kube_proxy: Refreshing state... [id=online-boutique-dev:kube-proxy]
+module.eks.aws_eks_addon.vpc_cni: Refreshing state... [id=online-boutique-dev:vpc-cni]
+module.eks.data.tls_certificate.eks: Reading...
+module.eks.aws_eks_node_group.application: Refreshing state... [id=online-boutique-dev:online-boutique-dev-application]
+module.eks.aws_eks_node_group.system: Refreshing state... [id=online-boutique-dev:online-boutique-dev-system]
+module.vpc.aws_nat_gateway.main[0]: Refreshing state... [id=nat-0fe10c6853201d840]
+module.vpc.aws_route.private_nat[0]: Refreshing state... [id=r-rtb-0b50d0e39014d91191080289494]
+module.redis.aws_elasticache_replication_group.main: Refreshing state... [id=online-boutique-dev-redis]
+module.eks.aws_eks_addon.coredns: Refreshing state... [id=online-boutique-dev:coredns]
+module.eks.data.tls_certificate.eks: Read complete after 1s [id=689b51723c82af77175806a2eda17f8b81260588]
+module.eks.aws_iam_openid_connect_provider.eks: Refreshing state... [id=arn:aws:iam::648332710731:oidc-provider/oidc.eks.ap-northeast-1.amazonaws.com/id/457A1B5D3662287B1CE7597D5391FDB1]
+module.eks.data.aws_iam_policy_document.ebs_csi_assume: Reading...
+module.eks.data.aws_iam_policy_document.alb_assume: Reading...
+module.eks.data.aws_iam_policy_document.external_secrets_assume: Reading...
+module.eks.data.aws_iam_policy_document.ebs_csi_assume: Read complete after 0s [id=1222805197]
+module.eks.data.aws_iam_policy_document.alb_assume: Read complete after 0s [id=3412078049]
+module.eks.data.aws_iam_policy_document.external_secrets_assume: Read complete after 0s [id=35270853]
+module.eks.aws_iam_role.ebs_csi: Refreshing state... [id=online-boutique-dev-ebs-csi]
+module.eks.aws_iam_role.alb_controller: Refreshing state... [id=online-boutique-dev-alb-controller]
+module.s3.aws_s3_bucket_server_side_encryption_configuration.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.s3.aws_s3_bucket_versioning.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.s3.aws_s3_bucket_public_access_block.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.s3.aws_s3_bucket_policy.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.s3.aws_s3_bucket_lifecycle_configuration.alb_logs: Refreshing state... [id=online-boutique-dev-alb-logs-648332710731]
+module.redis.aws_secretsmanager_secret_version.redis_auth: Refreshing state... [id=arn:aws:secretsmanager:ap-northeast-1:648332710731:secret:online-boutique-dev-redis/redis/auth-token-y3a0ig|terraform-20260515005915572700000002]
+module.eks.aws_iam_role_policy_attachment.alb_controller: Refreshing state... [id=online-boutique-dev-alb-controller-20260514160522200100000015]
+module.eks.aws_iam_role_policy_attachment.ebs_csi: Refreshing state... [id=online-boutique-dev-ebs-csi-20260514160522067300000014]
+module.eks.aws_eks_addon.ebs_csi: Refreshing state... [id=online-boutique-dev:aws-ebs-csi-driver]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # module.eks.aws_iam_policy.external_secrets will be created
+  + resource "aws_iam_policy" "external_secrets" {
+      + arn              = (known after apply)
+      + attachment_count = (known after apply)
+      + description      = "External Secrets Operator — read Secrets Manager"
+      + id               = (known after apply)
+      + name             = "online-boutique-dev-external-secrets-policy"
+      + name_prefix      = (known after apply)
+      + path             = "/"
+      + policy           = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action   = [
+                          + "secretsmanager:GetSecretValue",
+                          + "secretsmanager:DescribeSecret",
+                        ]
+                      + Effect   = "Allow"
+                      + Resource = "arn:aws:secretsmanager:*:648332710731:secret:online-boutique-dev/*"
+                      + Sid      = "SecretsManagerRead"
+                    },
+                  + {
+                      + Action    = [
+                          + "kms:Decrypt",
+                        ]
+                      + Condition = {
+                          + StringLike = {
+                              + "kms:ViaService" = "secretsmanager.*.amazonaws.com"
+                            }
+                        }
+                      + Effect    = "Allow"
+                      + Resource  = "*"
+                      + Sid       = "KMSDecrypt"
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + policy_id        = (known after apply)
+      + tags             = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Module"      = "eks"
+          + "Owner"       = "dev-team"
+          + "Project"     = "online-boutique"
+        }
+      + tags_all         = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Module"      = "eks"
+          + "Owner"       = "dev-team"
+          + "Project"     = "online-boutique"
+        }
+    }
+
+  # module.eks.aws_iam_role.external_secrets will be created
+  + resource "aws_iam_role" "external_secrets" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRoleWithWebIdentity"
+                      + Condition = {
+                          + StringEquals = {
+                              + "oidc.eks.ap-northeast-1.amazonaws.com/id/457A1B5D3662287B1CE7597D5391FDB1:sub" = "system:serviceaccount:external-secrets:external-secrets"
+                            }
+                        }
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Federated = "arn:aws:iam::648332710731:oidc-provider/oidc.eks.ap-northeast-1.amazonaws.com/id/457A1B5D3662287B1CE7597D5391FDB1"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "online-boutique-dev-external-secrets"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags                  = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Module"      = "eks"
+          + "Owner"       = "dev-team"
+          + "Project"     = "online-boutique"
+        }
+      + tags_all              = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Module"      = "eks"
+          + "Owner"       = "dev-team"
+          + "Project"     = "online-boutique"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # module.eks.aws_iam_role_policy_attachment.external_secrets will be created
+  + resource "aws_iam_role_policy_attachment" "external_secrets" {
+      + id         = (known after apply)
+      + policy_arn = (known after apply)
+      + role       = "online-boutique-dev-external-secrets"
+    }
+
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
+Releasing state lock. This may take a few moments...
