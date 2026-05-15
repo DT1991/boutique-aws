@@ -1,0 +1,26 @@
+# Test environment overrides
+global:
+  environment: test
+  tag: test-latest
+
+services:
+  frontend:
+    replicas: 1
+    hpa:
+      enabled: false
+  cartservice:
+    replicas: 1
+  loadgenerator:
+    enabled: true
+    env:
+      USERS: "10"
+
+ingress:
+  host: "test.online-boutique.boutique-team.com"
+  certArn: "PLACEHOLDER_TEST_CERT_ARN"
+  albLogsBucket: "online-boutique-test-alb-logs"
+
+externalSecrets:
+  redisSecretPath: "online-boutique-test/redis/auth-token"
+  # terraform -chdir=terraform/environments/test output -raw external_secrets_role_arn
+  roleArn: ""

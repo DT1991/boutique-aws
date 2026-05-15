@@ -1,0 +1,34 @@
+# Perf environment overrides — dedicated load-testing environment with larger replica counts
+global:
+  environment: perf
+
+services:
+  frontend:
+    replicas: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 20
+  currencyservice:
+    replicas: 4   # highest-QPS service
+    hpa:
+      minReplicas: 4
+      maxReplicas: 20
+  cartservice:
+    replicas: 3
+  checkoutservice:
+    replicas: 3
+  loadgenerator:
+    enabled: true
+    replicas: 2   # two load generator instances for increased load
+    env:
+      USERS: "100"
+
+ingress:
+  host: "perf.online-boutique.boutique-team.com"
+  certArn: "PLACEHOLDER_PERF_CERT_ARN"
+  albLogsBucket: "online-boutique-perf-alb-logs"
+
+externalSecrets:
+  redisSecretPath: "online-boutique-perf/redis/auth-token"
+  # terraform -chdir=terraform/environments/perf output -raw external_secrets_role_arn
+  roleArn: ""

@@ -1,0 +1,194 @@
+{{- $svc := .Values.services.cartservice }}
+{{- if $svc.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+  {{- if .Values.rbac.cartserviceRoleArn }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.rbac.cartserviceRoleArn | quote }}
+  {{- end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: cartservice
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "cartservice") | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" (dict "name" "cartservice") | nindent 8 }}
+        version: {{ .Values.global.tag | quote }}
+    spec:
+      serviceAccountName: cartservice
+      securityContext:
+        {{- include "online-boutique.podSecurityContext" . | nindent 8 }}
+      {{- include "online-boutique.topologySpread" (dict "name" "cartservice" "global" .Values.global) | nindent 6 }}
+      containers:
+        - name: server
+          image: {{ include "online-boutique.image" (dict "svc" $svc "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ $svc.port }}
+          env:
+            # Redis connection details sourced from ExternalSecret (AWS Secrets Manager → K8s Secret)
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.redis.secretName }}
+                  key: {{ $svc.redis.hostKey }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.redis.secretName }}
+                  key: {{ $svc.redis.passwordKey }}
+            - name: REDIS_TLS_ENABLED
+              value: {{ $svc.redis.tlsEnabled | quote }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml $svc.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml $svc.readinessProbe | nindent 12 }}
+          securityContext:
+            {{- include "online-boutique.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: cartservice
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "online-boutique.selectorLabels" (dict "name" "cartservice") | nindent 4 }}
+  ports:
+    - name: grpc
+      port: {{ $svc.port }}
+      targetPort: {{ $svc.port }}
+
+{{- if $svc.hpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cartservice
+  minReplicas: {{ $svc.hpa.minReplicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "cartservice") | nindent 6 }}
+
+{{- if .Values.global.networkPolicyEnabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cartservice
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: cartservice
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: frontend } }
+        - podSelector: { matchLabels: { app: checkoutservice } }
+      ports:
+        - port: {{ $svc.port }}
+  egress:
+    # ElastiCache Redis
+    - ports:
+        - port: 6379
+          protocol: TCP
+    # AWS Secrets Manager VPC endpoint
+    - ports:
+        - port: 443
+          protocol: TCP
+{{- end }}
+
+{{- if .Values.externalSecrets.enabled }}
+---
+# ExternalSecret: AWS Secrets Manager → K8s Secret (redis-credentials)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: redis-credentials
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+spec:
+  refreshInterval: {{ .Values.externalSecrets.refreshInterval }}
+  secretStoreRef:
+    name: {{ .Values.externalSecrets.clusterSecretStoreName }}
+    kind: ClusterSecretStore
+  target:
+    name: {{ $svc.redis.secretName }}
+    creationPolicy: Owner
+  data:
+    - secretKey: {{ $svc.redis.hostKey }}
+      remoteRef:
+        key: {{ .Values.externalSecrets.redisSecretPath }}
+        property: host
+    - secretKey: {{ $svc.redis.passwordKey }}
+      remoteRef:
+        key: {{ .Values.externalSecrets.redisSecretPath }}
+        property: auth_token
+{{- end }}
+{{- end }}

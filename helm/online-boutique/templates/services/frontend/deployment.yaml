@@ -1,0 +1,184 @@
+{{- $svc := .Values.services.frontend }}
+{{- if $svc.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: frontend
+  annotations:
+    kubernetes.io/change-cause: "helm upgrade {{ .Release.Name }} chart-version={{ .Chart.Version }} tag={{ .Values.global.tag }}"
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "frontend") | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" (dict "name" "frontend") | nindent 8 }}
+        version: {{ .Values.global.tag | quote }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/_healthz"
+    spec:
+      serviceAccountName: frontend
+      securityContext:
+        {{- include "online-boutique.podSecurityContext" . | nindent 8 }}
+      {{- include "online-boutique.topologySpread" (dict "name" "frontend" "global" .Values.global) | nindent 6 }}
+      containers:
+        - name: server
+          image: {{ include "online-boutique.image" (dict "svc" $svc "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+              protocol: TCP
+          env:
+            {{- range $k, $v := $svc.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          {{- if $svc.livenessProbe }}
+          livenessProbe:
+            {{- toYaml $svc.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $svc.readinessProbe }}
+          readinessProbe:
+            {{- toYaml $svc.readinessProbe | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- include "online-boutique.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: frontend
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "online-boutique.selectorLabels" (dict "name" "frontend") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $svc.servicePort }}
+      targetPort: {{ $svc.port }}
+      protocol: TCP
+
+{{- if $svc.hpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: {{ $svc.hpa.minReplicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.targetCPUUtilizationPercentage }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+{{- end }}
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "frontend") | nindent 6 }}
+
+{{- if .Values.global.networkPolicyEnabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - port: {{ $svc.port }}
+  egress:
+    - to: [{ podSelector: { matchLabels: { app: productcatalogservice } } }]
+      ports: [{ port: 3550 }]
+    - to: [{ podSelector: { matchLabels: { app: currencyservice } } }]
+      ports: [{ port: 7000 }]
+    - to: [{ podSelector: { matchLabels: { app: cartservice } } }]
+      ports: [{ port: 7070 }]
+    - to: [{ podSelector: { matchLabels: { app: recommendationservice } } }]
+      ports: [{ port: 8080 }]
+    - to: [{ podSelector: { matchLabels: { app: shippingservice } } }]
+      ports: [{ port: 50051 }]
+    - to: [{ podSelector: { matchLabels: { app: checkoutservice } } }]
+      ports: [{ port: 5050 }]
+    - to: [{ podSelector: { matchLabels: { app: adservice } } }]
+      ports: [{ port: 9555 }]
+{{- end }}
+{{- end }}

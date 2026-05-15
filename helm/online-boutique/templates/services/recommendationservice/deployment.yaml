@@ -1,0 +1,117 @@
+{{- $svc := .Values.services.recommendationservice }}
+{{- if $svc.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: recommendationservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendationservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: recommendationservice
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "recommendationservice") | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" (dict "name" "recommendationservice") | nindent 8 }}
+        version: {{ .Values.global.tag | quote }}
+    spec:
+      serviceAccountName: recommendationservice
+      securityContext:
+        {{- include "online-boutique.podSecurityContext" . | nindent 8 }}
+      {{- include "online-boutique.topologySpread" (dict "name" "recommendationservice" "global" .Values.global) | nindent 6 }}
+      containers:
+        - name: server
+          image: {{ include "online-boutique.image" (dict "svc" $svc "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: 8080
+          {{- if $svc.env }}
+          env:
+            {{- range $k, $v := $svc.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          {{- include "online-boutique.grpcLivenessProbe" (dict "port" 8080) | nindent 10 }}
+          {{- include "online-boutique.grpcReadinessProbe" (dict "port" 8080) | nindent 10 }}
+          securityContext:
+            {{- include "online-boutique.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendationservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app: recommendationservice
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "online-boutique.selectorLabels" (dict "name" "recommendationservice") | nindent 4 }}
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: recommendationservice
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" (dict "name" "recommendationservice") | nindent 6 }}
+{{- if $svc.hpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: recommendationservice
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: recommendationservice
+  minReplicas: {{ $svc.hpa.minReplicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+{{- end }}
