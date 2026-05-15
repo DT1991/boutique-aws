@@ -68,9 +68,9 @@ resource "aws_subnet" "database" {
 }
 
 resource "aws_eip" "nat" {
-  count  = var.single_nat_gateway ? 1 : local.az_count
-  domain = "vpc"
-  tags   = merge(local.tags, { Name = "${var.name}-eip-${count.index}" })
+  count      = var.single_nat_gateway ? 1 : local.az_count
+  domain     = "vpc"
+  tags       = merge(local.tags, { Name = "${var.name}-eip-${count.index}" })
   depends_on = [aws_internet_gateway.main]
 }
 
@@ -128,7 +128,7 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
 resource "aws_iam_role" "flow_logs" {
   name = "${var.name}-vpc-flow-logs"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Principal = { Service = "vpc-flow-logs.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
   tags = local.tags
@@ -138,7 +138,7 @@ resource "aws_iam_role_policy" "flow_logs" {
   name = "flow-logs"
   role = aws_iam_role.flow_logs.id
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"], Resource = "*" }]
   })
 }

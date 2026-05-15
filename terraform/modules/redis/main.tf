@@ -82,15 +82,15 @@ resource "random_password" "auth" {
 }
 
 resource "aws_secretsmanager_secret" "redis_auth" {
-  name                           = "${var.name}/redis/auth-token"
-  description                    = "Redis AUTH token for ${var.name}"
-  recovery_window_in_days        = 0
-  kms_key_id                     = aws_kms_key.redis.arn
-  tags                           = local.tags
+  name                    = "${var.name}/redis/auth-token"
+  description             = "Redis AUTH token for ${var.name}"
+  recovery_window_in_days = 0
+  kms_key_id              = aws_kms_key.redis.arn
+  tags                    = local.tags
 }
 
 resource "aws_secretsmanager_secret_version" "redis_auth" {
-  secret_id     = aws_secretsmanager_secret.redis_auth.id
+  secret_id = aws_secretsmanager_secret.redis_auth.id
   secret_string = jsonencode({
     auth_token = random_password.auth.result
     host       = aws_elasticache_replication_group.main.primary_endpoint_address
@@ -119,9 +119,9 @@ resource "aws_elasticache_replication_group" "main" {
   automatic_failover_enabled = var.num_cache_nodes > 1
   multi_az_enabled           = var.num_cache_nodes > 1
 
-  snapshot_retention_limit = var.snapshot_retention_days
-  snapshot_window          = "02:00-03:00"
-  maintenance_window       = "sun:03:00-sun:04:00"
+  snapshot_retention_limit   = var.snapshot_retention_days
+  snapshot_window            = "02:00-03:00"
+  maintenance_window         = "sun:03:00-sun:04:00"
   auto_minor_version_upgrade = true
 
   tags = merge(local.tags, { Name = var.name })

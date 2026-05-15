@@ -1,6 +1,6 @@
-variable "name"                    { type = string }
-variable "vpc_id"                  { type = string }
-variable "subnet_ids"              { type = list(string) }
+variable "name" { type = string }
+variable "vpc_id" { type = string }
+variable "subnet_ids" { type = list(string) }
 variable "allowed_security_groups" { type = list(string) }
 
 variable "engine_version" {
