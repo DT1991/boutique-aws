@@ -86,9 +86,9 @@ resource "aws_iam_policy" "build" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "ECRAuth"
-        Effect = "Allow"
-        Action = ["ecr:GetAuthorizationToken"]
+        Sid      = "ECRAuth"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
         Resource = "*"
       },
       {
@@ -131,27 +131,27 @@ resource "aws_iam_policy" "deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "TerraformState"
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Sid    = "TerraformState"
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
         Resource = [
           "arn:${data.aws_partition.current.partition}:s3:::online-boutique-tfstate-*",
           "arn:${data.aws_partition.current.partition}:s3:::online-boutique-tfstate-*/*",
         ]
       },
       {
-        Sid      = "EKSAccess"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "EKSAccess"
+        Effect = "Allow"
+        Action = [
           "eks:DescribeCluster",
           "eks:ListClusters",
         ]
         Resource = "*"
       },
       {
-        Sid      = "FullIAMForTerraform"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "FullIAMForTerraform"
+        Effect = "Allow"
+        Action = [
           "iam:*",
           "ec2:*",
           "eks:*",

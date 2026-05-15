@@ -24,8 +24,8 @@ data "aws_partition" "current" {}
 
 data "aws_iam_policy_document" "eks_kms" {
   statement {
-    sid       = "RootFullAccess"
-    effect    = "Allow"
+    sid    = "RootFullAccess"
+    effect = "Allow"
     principals {
       type        = "AWS"
       identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
@@ -89,7 +89,7 @@ resource "aws_kms_alias" "eks" {
 resource "aws_iam_role" "cluster" {
   name = "${var.cluster_name}-cluster-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Principal = { Service = "eks.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
   tags = local.tags
@@ -179,7 +179,7 @@ resource "aws_eks_cluster" "main" {
     provider {
       key_arn = aws_kms_key.eks.arn
     }
-    resources  = ["secrets"]
+    resources = ["secrets"]
   }
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
@@ -209,7 +209,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 resource "aws_iam_role" "nodes" {
   name = "${var.cluster_name}-node-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Principal = { Service = "ec2.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
   tags = local.tags
@@ -401,7 +401,7 @@ resource "aws_eks_addon" "ebs_csi" {
 # IRSA for EBS CSI
 data "aws_iam_policy_document" "ebs_csi_assume" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     principals {
       type        = "Federated"
       identifiers = [aws_iam_openid_connect_provider.eks.arn]
@@ -466,9 +466,9 @@ resource "aws_iam_policy" "external_secrets" {
         Resource = "arn:${data.aws_partition.current.partition}:secretsmanager:*:${data.aws_caller_identity.current.account_id}:secret:${var.cluster_name}/*"
       },
       {
-        Sid    = "KMSDecrypt"
-        Effect = "Allow"
-        Action = ["kms:Decrypt"]
+        Sid      = "KMSDecrypt"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
         Resource = "*"
         Condition = {
           StringLike = {
@@ -488,7 +488,7 @@ resource "aws_iam_role_policy_attachment" "external_secrets" {
 # IRSA for AWS Load Balancer Controller
 data "aws_iam_policy_document" "alb_assume" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     principals {
       type        = "Federated"
       identifiers = [aws_iam_openid_connect_provider.eks.arn]

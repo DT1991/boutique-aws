@@ -1,5 +1,5 @@
-variable "name"               { type = string }
-variable "region"             { type = string }
+variable "name" { type = string }
+variable "region" { type = string }
 
 variable "vpc_cidr" {
   type    = string
@@ -7,7 +7,7 @@ variable "vpc_cidr" {
 }
 
 variable "availability_zones" { type = list(string) }
-variable "cluster_name"       { type = string }
+variable "cluster_name" { type = string }
 
 variable "single_nat_gateway" {
   type    = bool
