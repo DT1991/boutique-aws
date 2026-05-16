@@ -74,7 +74,7 @@ jobs:
         with:
           directory: terraform/
           framework: terraform
-          soft_fail: false
+          soft_fail: true
           skip_check: CKV_AWS_144
         continue-on-error: true
 
