@@ -41,3 +41,6 @@ ingress:
 externalSecrets:
   enabled: false
   redisSecretPath: "online-boutique-dev/redis/auth-token"
+
+monitoring:
+  enabled: false
