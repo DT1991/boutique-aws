@@ -21,6 +21,5 @@ ingress:
   albLogsBucket: "online-boutique-test-alb-logs"
 
 externalSecrets:
+  enabled: false
   redisSecretPath: "online-boutique-test/redis/auth-token"
-  # terraform -chdir=terraform/environments/test output -raw external_secrets_role_arn
-  roleArn: ""

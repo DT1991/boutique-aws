@@ -29,6 +29,5 @@ ingress:
   albLogsBucket: "online-boutique-perf-alb-logs"
 
 externalSecrets:
+  enabled: false
   redisSecretPath: "online-boutique-perf/redis/auth-token"
-  # terraform -chdir=terraform/environments/perf output -raw external_secrets_role_arn
-  roleArn: ""

@@ -105,6 +105,9 @@ services:
       hostKey: "host_port"
       passwordKey: "auth_token"
       tlsEnabled: "true"
+      # Used when externalSecrets.enabled=false (direct injection)
+      addr: ""
+      password: ""
     livenessProbe:
       grpc:
         port: 7070
