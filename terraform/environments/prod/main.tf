@@ -101,7 +101,8 @@ module "eks" {
   app_node_min            = var.app_node_min
   app_node_max            = var.app_node_max
 
-  tags = local.common_tags
+  admin_principal_arns = var.admin_principal_arns
+  tags                 = local.common_tags
 }
 
 module "redis" {
@@ -170,7 +171,8 @@ module "eks_secondary" {
   app_node_min            = var.secondary_app_node_min
   app_node_max            = var.secondary_app_node_max
 
-  tags = local.common_tags
+  admin_principal_arns = var.admin_principal_arns
+  tags                 = local.common_tags
 }
 
 module "redis_secondary" {

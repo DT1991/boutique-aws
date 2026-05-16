@@ -30,3 +30,8 @@ variable "secondary_system_node_max" { type = number }
 variable "secondary_app_node_desired" { type = number }
 variable "secondary_app_node_min" { type = number }
 variable "secondary_app_node_max" { type = number }
+
+variable "admin_principal_arns" {
+  type    = list(string)
+  default = []
+}
