@@ -24,3 +24,8 @@ variable "qa_cidrs" {
   type    = list(string)
   default = ["0.0.0.0/0"]
 }
+
+variable "admin_principal_arns" {
+  type    = list(string)
+  default = []
+}

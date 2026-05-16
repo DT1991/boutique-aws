@@ -194,6 +194,25 @@ resource "aws_eks_cluster" "main" {
   depends_on = [aws_iam_role_policy_attachment.cluster_policy]
 }
 
+# Admin access entries
+resource "aws_eks_access_entry" "admins" {
+  for_each      = toset(var.admin_principal_arns)
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = each.value
+  type          = "STANDARD"
+  tags          = local.tags
+}
+
+resource "aws_eks_access_policy_association" "admins" {
+  for_each      = toset(var.admin_principal_arns)
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = each.value
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  access_scope {
+    type = "cluster"
+  }
+}
+
 # OIDC Provider for IRSA
 data "tls_certificate" "eks" {
   url = aws_eks_cluster.main.identity[0].oidc[0].issuer
