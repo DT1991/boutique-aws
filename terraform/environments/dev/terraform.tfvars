@@ -21,7 +21,10 @@ redis_snapshot_retention_days = 0
 
 s3_force_destroy = true
 
-admin_principal_arns = ["arn:aws:iam::648332710731:user/terraform-deploy"]
+admin_principal_arns = [
+  "arn:aws:iam::648332710731:user/terraform-deploy",
+  "arn:aws:iam::648332710731:role/github-actions-deploy",
+]
 
 
 
