@@ -302,12 +302,16 @@ jobs:
             --output text)
           echo "addr=${REDIS_ADDR}:6379" >> $GITHUB_OUTPUT
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace ${{ env.HELM_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Helm upgrade
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
             --namespace ${{ env.HELM_NAMESPACE }} \
-            --create-namespace \
             -f ${{ env.HELM_CHART }}/values.yaml \
             -f helm/values/values-dev.yaml \
             --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
