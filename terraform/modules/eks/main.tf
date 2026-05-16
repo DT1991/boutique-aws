@@ -213,6 +213,25 @@ resource "aws_eks_access_policy_association" "admins" {
   }
 }
 
+resource "aws_eks_access_entry" "deploy" {
+  for_each      = toset(var.deploy_principal_arns)
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = each.value
+  type          = "STANDARD"
+  tags          = local.tags
+}
+
+resource "aws_eks_access_policy_association" "deploy" {
+  for_each      = toset(var.deploy_principal_arns)
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = each.value
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+  access_scope {
+    type       = "namespace"
+    namespaces = ["online-boutique"]
+  }
+}
+
 # OIDC Provider for IRSA
 data "tls_certificate" "eks" {
   url = aws_eks_cluster.main.identity[0].oidc[0].issuer
