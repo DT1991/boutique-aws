@@ -50,7 +50,8 @@ spec:
             - name: grpc
               containerPort: {{ $svc.port }}
           env:
-            # Redis connection details sourced from ExternalSecret (AWS Secrets Manager → K8s Secret)
+            {{- if .Values.externalSecrets.enabled }}
+            # Redis connection details sourced from ExternalSecret (AWS Secrets Manager -> K8s Secret)
             - name: REDIS_ADDR
               valueFrom:
                 secretKeyRef:
@@ -61,6 +62,13 @@ spec:
                 secretKeyRef:
                   name: {{ $svc.redis.secretName }}
                   key: {{ $svc.redis.passwordKey }}
+            {{- else }}
+            # Redis connection details injected directly (ESO disabled)
+            - name: REDIS_ADDR
+              value: {{ $svc.redis.addr | quote }}
+            - name: REDIS_PASSWORD
+              value: {{ $svc.redis.password | default "" | quote }}
+            {{- end }}
             - name: REDIS_TLS_ENABLED
               value: {{ $svc.redis.tlsEnabled | quote }}
           resources:

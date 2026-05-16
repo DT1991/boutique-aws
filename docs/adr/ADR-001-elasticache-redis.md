@@ -18,9 +18,9 @@ Replace the in-cluster Redis with **AWS ElastiCache Redis**:
 
 - Provisioned via the Terraform `redis` module
 - TLS in transit (`transit_encryption_enabled = true`)
-- AUTH token stored in AWS Secrets Manager
-- External Secrets Operator syncs the Secrets Manager entry into a K8s Secret
-- cartservice reads `REDIS_ADDR` and `REDIS_PASSWORD` from environment variables
+- AUTH token stored in AWS Secrets Manager (provisioned by Terraform)
+- The CI/CD pipeline retrieves the ElastiCache endpoint at deploy time via AWS CLI and injects it into the Helm release via `--set services.cartservice.redis.addr=...`
+- cartservice reads `REDIS_ADDR` and `REDIS_TLS_ENABLED` from environment variables
 
 ## Consequences
 

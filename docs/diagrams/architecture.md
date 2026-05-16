@@ -30,9 +30,9 @@ See [ADR-001](../adr/ADR-001-elasticache-redis.md)
 - Lifecycle policy: untagged images purged after 7 days; up to 50 tagged images retained
 
 ### Secret Management
-- AWS Secrets Manager holds all credentials (Redis AUTH token, future DB passwords, etc.)
-- External Secrets Operator syncs secrets into K8s Secrets within each namespace
-- Plaintext secrets must never be committed to Git (enforced by a pre-commit hook)
+- AWS Secrets Manager holds Redis AUTH tokens (provisioned by Terraform `redis` module)
+- The CI/CD pipeline retrieves the ElastiCache endpoint at deploy time via AWS CLI and injects it into the Helm release via `--set services.cartservice.redis.addr=...`
+- Plaintext secrets must never be committed to Git
 
 ### Network Security
 - Default-deny NetworkPolicy: every service must explicitly declare its allowed ingress and egress
@@ -73,29 +73,30 @@ push
   │
   ├─ Stage 1: Detect changed services (dorny/paths-filter on src/<service>/)
   │
-  ├─ Stage 2: Language-specific tests (parallel)
+  ├─ Stage 2: Helm lint (all environments)
+  │
+  ├─ Stage 3: Language-specific unit tests (parallel)
   │   ├── Go:     golangci-lint + go test
   │   ├── Node.js: npm ci + npm test
   │   ├── Python: pytest
   │   ├── .NET:   dotnet test   ← cartservice
   │   └── Java:   gradle test   ← adservice
   │
-  ├─ Stage 3: Trivy filesystem scan (fails on CRITICAL/HIGH)
+  ├─ Stage 4: Trivy filesystem scan (report only, non-blocking)
   │
-  ├─ Stage 4: Build & push to ECR (main branch only)
-  │   └── Trivy image scan + SBOM attestation
+  ├─ Stage 5: Build & push to ECR (main branch only, SBOM attestation)
   │
-  ├─ Stage 5: Deploy → dev (automatic) + smoke test
+  ├─ Stage 6: Deploy → dev (automatic) + kubectl rollout status
   │
-  ├─ Stage 6: E2E integration tests against dev
+  ├─ Stage 7: Integration tests (pod health + ALB HTTP check)
   │
-  ├─ Stage 7: Deploy → test (automatic)
+  ├─ Stage 8: Deploy → test (automatic)
   │
-  ├─ Stage 8: Deploy → perf (automatic)
+  ├─ Stage 9: Deploy → perf (automatic)
   │
-  ├─ Stage 9: Deploy → staging (requires 1 SRE approval)
+  ├─ Stage 10: Deploy → staging (requires approval)
   │
-  └─ Stage 10: Deploy → prod (requires 2-person approval)
+  └─ Stage 11: Deploy → prod (requires approval) + Slack notification
 ```
 
 ## Infra Pipeline
@@ -132,4 +133,4 @@ Every image is tagged `sha-<short-sha>`. ECR repositories enforce immutable tags
 `values-staging.yaml` and `values-prod.yaml` both set `loadgenerator.enabled: false`, ensuring synthetic load never reaches production users.
 
 ### GitHub Actions OIDC authentication
-CI jobs authenticate to AWS using OIDC JWT tokens — no long-lived Access Keys are stored. Separate IAM roles are used for build (ECR push only) and deploy (Terraform + EKS full access), each scoped to the specific environment via a `repo:<org>/<repo>:*` trust condition.
+CI jobs authenticate to AWS using OIDC JWT tokens — no long-lived Access Keys are stored. Separate IAM roles are used for build (`AWS_ROLE_ARN_BUILD`, ECR push only) and deploy (`AWS_ROLE_ARN_<ENV>`, EKS access), each scoped to the specific environment via a `repo:<org>/<repo>:*` trust condition.

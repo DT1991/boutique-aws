@@ -1,3 +1,4 @@
+output "vpc_id" { value = module.vpc.vpc_id }
 output "eks_cluster_name" { value = module.eks.cluster_name }
 output "kubeconfig_cmd" { value = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --region ap-northeast-1" }
 output "redis_endpoint" { value = module.redis.primary_endpoint }

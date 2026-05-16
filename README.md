@@ -31,8 +31,7 @@ The upstream project targets GKE + Google Cloud. This repository adapts it for A
 
 - **Redis**: cartservice originally depends on in-cluster Redis — replaced with AWS ElastiCache Redis
 - **Container registry**: GCR replaced with AWS ECR (immutable tags + Trivy scanning)
-- **Ingress**: LoadBalancer Service replaced with AWS ALB Ingress Controller + cert-manager
-- **Secret management**: Plaintext env vars replaced with AWS Secrets Manager + External Secrets Operator
+- **Ingress**: LoadBalancer Service replaced with AWS ALB Ingress Controller
 - **Observability**: Stackdriver replaced with Prometheus + Grafana
 
 ## Repository Structure
@@ -110,24 +109,24 @@ terraform apply
 aws eks update-kubeconfig --name online-boutique-dev --region ap-northeast-1
 
 # Install AWS Load Balancer Controller
-ALB_ROLE=$(terraform -chdir=terraform/environments/dev output -raw alb_controller_role_arn)
 helm repo add eks https://aws.github.io/eks-charts && helm repo update
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
   --set clusterName=online-boutique-dev \
-  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$ALB_ROLE
-
-# Install External Secrets Operator
-ESO_ROLE=$(terraform -chdir=terraform/environments/dev output -raw external_secrets_role_arn)
-helm repo add external-secrets https://charts.external-secrets.io && helm repo update
-helm install external-secrets external-secrets/external-secrets \
-  -n external-secrets --create-namespace \
-  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$ESO_ROLE
+  --set region=ap-northeast-1 \
+  --set vpcId=$(terraform -chdir=terraform/environments/dev output -raw vpc_id)
 ```
 
 ### Deploy the Application
 
+The service pipeline handles deployment automatically on push to `main`. For manual deployment:
+
 ```bash
+REDIS_ADDR=$(aws elasticache describe-replication-groups \
+  --replication-group-id online-boutique-dev-redis \
+  --query 'ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address' \
+  --output text)
+
 helm upgrade --install online-boutique helm/online-boutique \
   --namespace online-boutique \
   --create-namespace \
@@ -135,11 +134,12 @@ helm upgrade --install online-boutique helm/online-boutique \
   -f helm/values/values-dev.yaml \
   --set global.registry=<ACCOUNT_ID>.dkr.ecr.ap-northeast-1.amazonaws.com/online-boutique \
   --set global.tag=sha-<short-sha> \
-  --set externalSecrets.roleArn=$ESO_ROLE \
+  --set services.cartservice.redis.addr=${REDIS_ADDR}:6379 \
   --atomic --wait
 
 # Check status
 helm status online-boutique -n online-boutique
+kubectl get pods -n online-boutique
 kubectl get ingress -n online-boutique
 
 # Rollback
