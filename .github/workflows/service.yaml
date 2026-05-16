@@ -217,27 +217,17 @@ jobs:
       matrix:
         include:
           - service: frontend
-            dockerfile: Dockerfile
           - service: cartservice
-            dockerfile: src/Dockerfile
+            context: src/cartservice/src
           - service: productcatalogservice
-            dockerfile: Dockerfile
           - service: currencyservice
-            dockerfile: Dockerfile
           - service: paymentservice
-            dockerfile: Dockerfile
           - service: shippingservice
-            dockerfile: Dockerfile
           - service: emailservice
-            dockerfile: Dockerfile
           - service: checkoutservice
-            dockerfile: Dockerfile
           - service: recommendationservice
-            dockerfile: Dockerfile
           - service: adservice
-            dockerfile: Dockerfile
           - service: loadgenerator
-            dockerfile: Dockerfile
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -255,8 +245,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v5
         with:
-          context: src/${{ matrix.service }}
-          file: src/${{ matrix.service }}/${{ matrix.dockerfile }}
+          context: ${{ matrix.context || format('src/{0}', matrix.service) }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
