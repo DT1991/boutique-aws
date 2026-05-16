@@ -103,7 +103,7 @@ module "eks" {
 
   admin_principal_arns  = var.admin_principal_arns
   deploy_principal_arns = var.deploy_principal_arns
-  tags                 = local.common_tags
+  tags                  = local.common_tags
 }
 
 module "redis" {
@@ -174,7 +174,7 @@ module "eks_secondary" {
 
   admin_principal_arns  = var.admin_principal_arns
   deploy_principal_arns = var.deploy_principal_arns
-  tags                 = local.common_tags
+  tags                  = local.common_tags
 }
 
 module "redis_secondary" {
