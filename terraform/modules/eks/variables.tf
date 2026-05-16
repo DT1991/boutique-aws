@@ -65,6 +65,12 @@ variable "admin_principal_arns" {
   default = []
 }
 
+variable "deploy_principal_arns" {
+  description = "IAM principals granted namespace-level edit access"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

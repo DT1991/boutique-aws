@@ -35,3 +35,8 @@ variable "admin_principal_arns" {
   type    = list(string)
   default = []
 }
+
+variable "deploy_principal_arns" {
+  type    = list(string)
+  default = []
+}
