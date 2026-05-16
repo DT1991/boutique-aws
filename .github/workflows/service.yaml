@@ -242,8 +242,27 @@ jobs:
           tags: |
             type=sha,prefix=sha-,format=short
             type=semver,pattern={{version}}
+      - name: Check if image already exists in ECR
+        id: check
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          EXISTING=$(aws ecr describe-images \
+            --repository-name ${{ env.IMAGE_PREFIX }}/${{ matrix.service }} \
+            --image-ids imageTag=sha-${SHORT_SHA} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'imageDetails[0].imageDigest' \
+            --output text 2>/dev/null || echo "NOT_FOUND")
+          if [ "$EXISTING" != "NOT_FOUND" ] && [ "$EXISTING" != "None" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Image sha-${SHORT_SHA} already exists, skipping build"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: docker/setup-buildx-action@v3
+        if: steps.check.outputs.exists == 'false'
       - uses: docker/build-push-action@v5
+        if: steps.check.outputs.exists == 'false'
         with:
           context: ${{ matrix.context || format('src/{0}', matrix.service) }}
           push: true
