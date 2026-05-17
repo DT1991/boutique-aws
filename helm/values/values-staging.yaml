@@ -28,3 +28,6 @@ externalSecrets:
 
 monitoring:
   enabled: false
+
+certManager:
+  enabled: false
