@@ -8,5 +8,5 @@ output "node_security_group_id" { value = aws_security_group.nodes.id }
 output "cluster_security_group_id" { value = aws_security_group.cluster.id }
 output "alb_controller_role_arn" { value = aws_iam_role.alb_controller.arn }
 output "external_secrets_role_arn" { value = aws_iam_role.external_secrets.arn }
-output "external_dns_role_arn"     { value = aws_iam_role.external_dns.arn }
+output "external_dns_role_arn" { value = aws_iam_role.external_dns.arn }
 output "kms_key_arn" { value = aws_kms_key.eks.arn }

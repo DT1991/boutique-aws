@@ -589,9 +589,9 @@ resource "aws_iam_policy" "external_dns" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Route53ChangeRecords"
-        Effect = "Allow"
-        Action = ["route53:ChangeResourceRecordSets"]
+        Sid      = "Route53ChangeRecords"
+        Effect   = "Allow"
+        Action   = ["route53:ChangeResourceRecordSets"]
         Resource = ["arn:aws:route53:::hostedzone/*"]
       },
       {
