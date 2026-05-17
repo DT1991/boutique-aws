@@ -74,3 +74,6 @@ externalSecrets:
   redisSecretPath: "online-boutique-prod/redis/auth-token"
   # terraform -chdir=terraform/environments/prod output -raw external_secrets_role_arn
   roleArn: ""
+
+monitoring:
+  enabled: false

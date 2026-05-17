@@ -25,3 +25,6 @@ externalSecrets:
   redisSecretPath: "online-boutique-staging/redis/auth-token"
   # terraform -chdir=terraform/environments/staging output -raw external_secrets_role_arn
   roleArn: ""
+
+monitoring:
+  enabled: false

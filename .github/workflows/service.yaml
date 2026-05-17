@@ -308,6 +308,18 @@ jobs:
       - name: Smoke test
         run: kubectl rollout status deployment --namespace ${{ env.HELM_NAMESPACE }} --timeout=120s
 
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "#deployments-dev"
+          slack-message: |
+            ${{ job.status == 'success' && 'Dev deploy success' || 'Dev deploy FAILED' }}
+            Tag: sha-${{ github.sha }}  By: ${{ github.actor }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   ###########################################################################
   # Stage 7: Integration tests
   ###########################################################################
@@ -342,7 +354,8 @@ jobs:
   deploy-test:
     name: "Stage 8: Deploy test"
     runs-on: ubuntu-latest
-    needs: integration-tests
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test'
     environment:
       name: test
       url: https://test.online-boutique.boutique-team.com
@@ -384,7 +397,8 @@ jobs:
   deploy-perf:
     name: "Stage 9: Deploy perf"
     runs-on: ubuntu-latest
-    needs: deploy-test
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'perf'
     environment:
       name: perf
       url: https://perf.online-boutique.boutique-team.com
@@ -426,7 +440,8 @@ jobs:
   deploy-staging:
     name: "Stage 10: Deploy staging"
     runs-on: ubuntu-latest
-    needs: deploy-perf
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
     environment:
       name: staging
       url: https://staging.online-boutique.boutique-team.com
@@ -468,7 +483,8 @@ jobs:
   deploy-prod:
     name: "Stage 11: Deploy prod"
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
     environment:
       name: prod
       url: https://www.online-boutique.boutique-team.com
@@ -526,7 +542,7 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: "#deployments"
+          channel-id: "#deployments-prod"
           slack-message: |
             ${{ job.status == 'success' && 'Prod deploy success' || 'Prod deploy FAILED' }}
             Tag: sha-${{ github.sha }}  By: ${{ github.actor }}
