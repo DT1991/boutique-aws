@@ -76,7 +76,6 @@ jobs:
           framework: terraform
           soft_fail: true
           skip_check: CKV_AWS_144
-        continue-on-error: true
 
   ###########################################################################
   # Stage 2: Plan (all environments in parallel)
@@ -194,13 +193,26 @@ jobs:
             -backend-config="region=${{ env.AWS_REGION }}"
           terraform apply -auto-approve -lock-timeout=120s tfplan.binary
 
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "#infra-dev"
+          slack-message: |
+            ${{ job.status == 'success' && 'Infra apply dev — success' || 'Infra apply dev — FAILED' }}
+            By: ${{ github.actor }}  Commit: `${{ github.sha }}`
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   ###########################################################################
   # Stage 4: Apply Test
   ###########################################################################
   apply-test:
     name: "Stage 4: Apply test"
     runs-on: ubuntu-latest
-    needs: apply-dev
+    needs: plan
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test'
     environment:
       name: infra-test
     steps:
@@ -230,7 +242,8 @@ jobs:
   apply-perf:
     name: "Stage 5: Apply perf"
     runs-on: ubuntu-latest
-    needs: apply-test
+    needs: plan
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'perf'
     environment:
       name: infra-perf
     steps:
@@ -260,7 +273,8 @@ jobs:
   apply-staging:
     name: "Stage 6: Apply staging"
     runs-on: ubuntu-latest
-    needs: apply-perf
+    needs: plan
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
     environment:
       name: infra-staging
     steps:
@@ -290,7 +304,8 @@ jobs:
   apply-prod:
     name: "Stage 7: Apply prod"
     runs-on: ubuntu-latest
-    needs: apply-staging
+    needs: plan
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
     environment:
       name: infra-prod
     steps:
@@ -318,7 +333,7 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: "#infra-changes"
+          channel-id: "#infra-prod"
           slack-message: |
             ${{ job.status == 'success' && 'Infra apply prod — success' || 'Infra apply prod — FAILED' }}
             By: ${{ github.actor }}  Commit: `${{ github.sha }}`
