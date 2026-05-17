@@ -44,13 +44,13 @@ spec:
           ports:
             - name: grpc
               containerPort: 50051
-          {{- if $svc.env }}
           env:
+            - name: PORT
+              value: {{ $svc.port | quote }}
             {{- range $k, $v := $svc.env }}
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
-          {{- end }}
           resources:
             {{- toYaml $svc.resources | nindent 12 }}
           {{- include "online-boutique.grpcLivenessProbe" (dict "port" 50051) | nindent 10 }}
