@@ -159,7 +159,7 @@ services:
       maxReplicas: 15
       targetCPUUtilizationPercentage: 60
     env:
-      ENABLE_PROFILER: "0"
+      DISABLE_PROFILER: "1"
 
   paymentservice:
     enabled: true
@@ -177,7 +177,7 @@ services:
     hpa:
       enabled: false
     env:
-      ENABLE_PROFILER: "0"
+      DISABLE_PROFILER: "1"
 
   shippingservice:
     enabled: true
