@@ -60,7 +60,7 @@ services:
       SHIPPING_SERVICE_ADDR: "shippingservice:50051"
       CHECKOUT_SERVICE_ADDR: "checkoutservice:5050"
       AD_SERVICE_ADDR: "adservice:9555"
-      SHOPPING_ASSISTANT_SERVICE_ADDR: ""
+      SHOPPING_ASSISTANT_SERVICE_ADDR: "shoppingassistantservice:80"
       ENV_PLATFORM: "aws"
       ENABLE_PROFILER: "0"
     livenessProbe:
@@ -158,6 +158,8 @@ services:
       minReplicas: 2
       maxReplicas: 15
       targetCPUUtilizationPercentage: 60
+    env:
+      ENABLE_PROFILER: "0"
 
   paymentservice:
     enabled: true
@@ -174,6 +176,8 @@ services:
         memory: 128Mi
     hpa:
       enabled: false
+    env:
+      ENABLE_PROFILER: "0"
 
   shippingservice:
     enabled: true
