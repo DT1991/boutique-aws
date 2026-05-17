@@ -168,7 +168,7 @@ jobs:
     name: "Stage 3: Apply dev"
     runs-on: ubuntu-latest
     needs: plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev' && inputs.action == 'apply')
     environment:
       name: infra-dev
     steps:
@@ -212,7 +212,7 @@ jobs:
     name: "Stage 4: Apply test"
     runs-on: ubuntu-latest
     needs: plan
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test'
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test' && inputs.action == 'apply'
     environment:
       name: infra-test
     steps:
@@ -243,7 +243,7 @@ jobs:
     name: "Stage 5: Apply perf"
     runs-on: ubuntu-latest
     needs: plan
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'perf'
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'perf' && inputs.action == 'apply'
     environment:
       name: infra-perf
     steps:
@@ -274,7 +274,7 @@ jobs:
     name: "Stage 6: Apply staging"
     runs-on: ubuntu-latest
     needs: plan
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging' && inputs.action == 'apply'
     environment:
       name: infra-staging
     steps:
@@ -305,7 +305,7 @@ jobs:
     name: "Stage 7: Apply prod"
     runs-on: ubuntu-latest
     needs: plan
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod' && inputs.action == 'apply'
     environment:
       name: infra-prod
     steps:
