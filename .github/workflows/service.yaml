@@ -283,14 +283,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - run: aws eks update-kubeconfig --name online-boutique-dev --region ${{ env.AWS_REGION }}
 
-      - name: Get Redis endpoint
+      - name: Get Redis endpoint and credentials
         id: redis
         run: |
           REDIS_ADDR=$(aws elasticache describe-replication-groups \
             --replication-group-id online-boutique-dev-redis \
             --query 'ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address' \
-            --output text)
+            --output text \
+            --region ${{ env.AWS_REGION }})
           echo "addr=${REDIS_ADDR}:6379" >> $GITHUB_OUTPUT
+
+          REDIS_PASSWORD=$(aws secretsmanager get-secret-value \
+            --secret-id online-boutique-dev-redis/redis/auth-token \
+            --query 'SecretString' \
+            --output text \
+            --region ${{ env.AWS_REGION }} | jq -r '.auth_token')
+          echo "::add-mask::${REDIS_PASSWORD}"
+          echo "password=${REDIS_PASSWORD}" >> $GITHUB_OUTPUT
 
       - name: Helm deploy
         run: |
@@ -303,6 +312,7 @@ jobs:
             --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
             --set global.tag=sha-${SHORT_SHA} \
             --set services.cartservice.redis.addr=${{ steps.redis.outputs.addr }} \
+            --set services.cartservice.redis.password=${{ steps.redis.outputs.password }} \
             --timeout 10m
 
       - name: Smoke test
