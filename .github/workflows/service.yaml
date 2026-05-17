@@ -286,12 +286,11 @@ jobs:
       - name: Get Redis endpoint and credentials
         id: redis
         run: |
-          REDIS_ADDR=$(aws elasticache describe-replication-groups \
+          REDIS_HOST=$(aws elasticache describe-replication-groups \
             --replication-group-id online-boutique-dev-redis \
             --query 'ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address' \
             --output text \
             --region ${{ env.AWS_REGION }})
-          echo "addr=${REDIS_ADDR}:6379" >> $GITHUB_OUTPUT
 
           REDIS_PASSWORD=$(aws secretsmanager get-secret-value \
             --secret-id online-boutique-dev-redis/redis/auth-token \
@@ -299,7 +298,11 @@ jobs:
             --output text \
             --region ${{ env.AWS_REGION }} | jq -r '.auth_token')
           echo "::add-mask::${REDIS_PASSWORD}"
-          echo "password=${REDIS_PASSWORD}" >> $GITHUB_OUTPUT
+
+          # StackExchange.Redis connection string with TLS and auth
+          REDIS_ADDR="${REDIS_HOST}:6379,password=${REDIS_PASSWORD},ssl=true,abortConnect=false"
+          echo "::add-mask::${REDIS_ADDR}"
+          echo "addr=${REDIS_ADDR}" >> $GITHUB_OUTPUT
 
       - name: Helm deploy
         run: |
@@ -311,8 +314,7 @@ jobs:
             -f helm/values/values-dev.yaml \
             --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
             --set global.tag=sha-${SHORT_SHA} \
-            --set services.cartservice.redis.addr=${{ steps.redis.outputs.addr }} \
-            --set services.cartservice.redis.password=${{ steps.redis.outputs.password }} \
+            --set "services.cartservice.redis.addr=${{ steps.redis.outputs.addr }}" \
             --timeout 10m
 
       - name: Smoke test
