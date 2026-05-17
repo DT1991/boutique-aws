@@ -307,14 +307,21 @@ jobs:
       - name: Helm deploy
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          # Write redis addr to a temp values file to avoid comma escaping issues with --set
+          cat > /tmp/redis-values.yaml << EOF
+          services:
+            cartservice:
+              redis:
+                addr: "${{ steps.redis.outputs.addr }}"
+          EOF
           helm upgrade --install online-boutique ${{ env.HELM_CHART }} \
             --namespace ${{ env.HELM_NAMESPACE }} \
             --create-namespace \
             -f ${{ env.HELM_CHART }}/values.yaml \
             -f helm/values/values-dev.yaml \
+            -f /tmp/redis-values.yaml \
             --set global.registry=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_PREFIX }} \
             --set global.tag=sha-${SHORT_SHA} \
-            --set "services.cartservice.redis.addr=${{ steps.redis.outputs.addr }}" \
             --timeout 10m
 
       - name: Smoke test
