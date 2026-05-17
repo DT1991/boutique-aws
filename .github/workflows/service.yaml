@@ -208,7 +208,9 @@ jobs:
             context: src/cartservice/src
           - service: productcatalogservice
           - service: currencyservice
+            dockerfile: docker/currencyservice/Dockerfile
           - service: paymentservice
+            dockerfile: docker/paymentservice/Dockerfile
           - service: shippingservice
           - service: emailservice
           - service: checkoutservice
@@ -250,6 +252,7 @@ jobs:
         if: steps.check.outputs.exists == 'false'
         with:
           context: ${{ matrix.context || format('src/{0}', matrix.service) }}
+          file: ${{ matrix.dockerfile || '' }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
