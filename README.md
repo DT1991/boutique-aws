@@ -259,3 +259,37 @@ curl -I https://dev.online-boutique.boutique-team.com
 | App nodes (secondary) | — | — | 1-10 | 2-8 | 3-50 |
 | Redis nodes (per region) | 1 | 1 | 2 / 1 | 2 / 2 | 3 / 3 |
 | loadgenerator | yes | yes | yes | no | no |
+
+## Screenshots
+
+### 1. Online Boutique - Frontend
+```
+# kubectl port-forward svc/frontend -n online-boutique 8080:80
+```
+<img width="1447" height="1027" alt="image" src="https://github.com/user-attachments/assets/679138e4-16d1-4332-a6d5-7a16a18045bd" />
+
+### 2. All Pods running
+
+```
+# kubectl get pods -n online-boutique
+```
+<img width="782" height="444" alt="image" src="https://github.com/user-attachments/assets/085ebc9b-1090-4ade-b95f-96334fbc65c8" />
+
+
+### 3. ALB Ingress
+```
+# kubectl get ingress -n online-boutique
+```
+<img width="819" height="87" alt="image" src="https://github.com/user-attachments/assets/3aaef417-3cea-4789-8af8-da90e225aca5" />
+
+
+### 4. Slack Deploy Notification
+```
+# infra-dev channel
+```
+<img width="659" height="385" alt="image" src="https://github.com/user-attachments/assets/43a7e1e6-7ec9-4fbf-968a-a9dde7f82313" />
+
+```
+# deployments-dev channel
+```
+<img width="648" height="384" alt="image" src="https://github.com/user-attachments/assets/fd26edf0-20a1-46dd-994e-2e30c6704fcf" />
