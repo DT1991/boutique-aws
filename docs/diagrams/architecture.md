@@ -87,6 +87,7 @@ graph TB
 - **Least privilege**: EKS nodes access Secrets Manager and ECR via IRSA — no long-lived credentials
 - **Private by default**: EKS nodes and Redis sit in private subnets; only the ALB is in the public subnet
 - **Cost gradient**: dev/test use `t3.micro` Redis + single NAT Gateway; prod uses `r6g.large` Redis + per-AZ NAT Gateways
+- **Network security**: Redis security group allows port 6379 only from EKS node security group; VPC Flow Logs enabled (7-day retention in dev, 90-day in prod)
 
 ### VPC CIDR Allocation
 

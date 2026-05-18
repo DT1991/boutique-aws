@@ -26,9 +26,6 @@ global:
   # Topology spread constraints (spread pods across availability zones where possible)
   topologySpreadEnabled: true
 
-  # Toggle for the default-deny NetworkPolicy
-  networkPolicyEnabled: true
-
 # =============================================================================
 # Per-service configuration
 # =============================================================================

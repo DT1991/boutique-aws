@@ -140,37 +140,6 @@ spec:
     matchLabels:
       {{- include "online-boutique.selectorLabels" (dict "name" "cartservice") | nindent 6 }}
 
-{{- if .Values.global.networkPolicyEnabled }}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: cartservice
-  namespace: {{ .Release.Namespace }}
-spec:
-  podSelector:
-    matchLabels:
-      app: cartservice
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector: { matchLabels: { app: frontend } }
-        - podSelector: { matchLabels: { app: checkoutservice } }
-      ports:
-        - port: {{ $svc.port }}
-  egress:
-    # ElastiCache Redis
-    - ports:
-        - port: 6379
-          protocol: TCP
-    # AWS Secrets Manager VPC endpoint
-    - ports:
-        - port: 443
-          protocol: TCP
-{{- end }}
-
 {{- if .Values.externalSecrets.enabled }}
 ---
 # ExternalSecret: AWS Secrets Manager → K8s Secret (redis-credentials)
