@@ -7,7 +7,7 @@ The upstream project is Google's demo e-commerce platform consisting of 11 micro
 - **Task 1** — Terraform IaC (VPC / EKS / ElastiCache / ECR / S3)
 - **Task 2** — Helm chart for all 11 services with per-environment values
 - **Task 3** — GitHub Actions CI/CD (infra pipeline + service pipeline)
-- **Task 4** — Architecture documentation and design decisions
+- **Task 4** — [Architecture documentation and design decisions](docs/diagrams/architecture.md)
 
 ## Services
 

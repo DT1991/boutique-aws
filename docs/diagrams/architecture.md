@@ -6,33 +6,30 @@
 
 ```mermaid
 graph LR
-    User([User]):::external
-    LG([loadgenerator\nnon-prod only]):::external
+    User([User])
+    LG([loadgenerator])
 
     User -->|HTTPS| ALB[AWS ALB]
-    LG  -->|HTTP|  ALB
+    LG -->|HTTP| ALB
 
-    ALB -->|HTTP| FE[frontend\nGo]
+    ALB -->|HTTP| FE[frontend]
 
-    FE -->|gRPC| CART[cartservice\nC#]
-    FE -->|gRPC| PC[productcatalogservice\nGo]
-    FE -->|gRPC| CUR[currencyservice\nNode.js]
-    FE -->|gRPC| CO[checkoutservice\nGo]
-    FE -->|gRPC| REC[recommendationservice\nPython]
-    FE -->|gRPC| AD[adservice\nJava]
-    FE -->|gRPC| SHIP[shippingservice\nGo]
+    FE -->|gRPC| CART[cartservice]
+    FE -->|gRPC| PC[productcatalogservice]
+    FE -->|gRPC| CUR[currencyservice]
+    FE -->|gRPC| CO[checkoutservice]
+    FE -->|gRPC| REC[recommendationservice]
+    FE -->|gRPC| AD[adservice]
+    FE -->|gRPC| SHIP[shippingservice]
 
     CO -->|gRPC| CART
     CO -->|gRPC| PC
     CO -->|gRPC| CUR
     CO -->|gRPC| SHIP
-    CO -->|gRPC| EMAIL[emailservice\nPython]
-    CO -->|gRPC| PAY[paymentservice\nNode.js]
+    CO -->|gRPC| EMAIL[emailservice]
+    CO -->|gRPC| PAY[paymentservice]
 
-    CART -->|TLS + AUTH| REDIS[(ElastiCache\nRedis)]:::datastore
-
-    classDef external fill:#f5f5f5,stroke:#999
-    classDef datastore fill:#fff3cd,stroke:#f0ad4e
+    CART -->|TLS + AUTH| REDIS[(ElastiCache Redis)]
 ```
 
 **Key points:**
@@ -53,21 +50,21 @@ graph TB
     end
 
     subgraph AWS Region ap-northeast-1
-        ECR[ECR\n11 repositories]
-        SM[Secrets Manager\nRedis AUTH token]
+        ECR[ECR 11 repositories]
+        SM[Secrets Manager Redis AUTH token]
 
         subgraph VPC["VPC (10.x.0.0/16)"]
             subgraph Public["Public Subnets (one per AZ)"]
-                ALB[AWS ALB\nALB Ingress Controller]
+                ALB[AWS ALB ALB Ingress Controller]
                 NAT[NAT Gateway]
             end
 
             subgraph Private["Private Subnets (one per AZ)"]
                 subgraph EKS["EKS Cluster"]
-                    SYS[System node group\nm5.large]
-                    APP[App node group\nm5.xlarge, auto-scaling]
+                    SYS[System node group m5.large]
+                    APP[App node group m5.xlarge, auto-scaling]
                 end
-                REDIS[(ElastiCache Redis\ncache.r6g.large)]
+                REDIS[(ElastiCache Redis cache.r6g.large)]
             end
         end
     end
@@ -125,6 +122,23 @@ perf, staging, and prod each deploy two full stacks — Tokyo (primary) and Virg
 
 ## Pipeline Architecture
 
+### Infra Pipeline
+
+Triggered on push to `main` (auto-applies dev) or `workflow_dispatch` (manual control for all environments).
+
+```mermaid
+flowchart TD
+    A([push to main or workflow_dispatch]) --> B
+    B[fmt + tflint + Checkov] --> C[terraform plan all envs]
+    C --> D{trigger?}
+    D -->|push to main| E[apply dev]
+    D -->|dispatch env=dev| E
+    D -->|dispatch env=test| F[apply test]
+    D -->|dispatch env=perf| G[apply perf]
+    D -->|dispatch env=staging| H[apply staging - approval required]
+    D -->|dispatch env=prod| I[apply prod - approval required]
+```
+
 ### Service Pipeline
 
 Triggered on every push / PR. Build and deploy stages only run under specific conditions.
@@ -132,43 +146,17 @@ Triggered on every push / PR. Build and deploy stages only run under specific co
 ```mermaid
 flowchart TD
     A([push / PR / workflow_dispatch]) --> B
-
-    B[helm lint\nall environments]
-    B --> C[unit tests\nmatrix: Go · Node.js · Python · .NET · Java]
-    C --> D[Trivy scan\nnon-blocking]
-    D --> E{branch = main?}
-
+    B[helm lint] --> C[unit tests]
+    C --> D[Trivy scan]
+    D --> E{main branch?}
     E -->|No| Z([end])
-    E -->|Yes| F[build & push to ECR\nmatrix: 11 services\ntag: sha-SHORT_SHA]
-
-    F --> G[deploy → dev\nautomatic]
-    G --> H{workflow_dispatch\n+ environment input?}
-
-    H -->|environment = test|     I[deploy → test]
-    H -->|environment = perf|     J[deploy → perf]
-    H -->|environment = staging|  K[deploy → staging\nrequires approval]
-    H -->|environment = prod|     L[deploy → prod\nrequires approval]
-```
-
-### Infra Pipeline
-
-Triggered on push to `main` (auto-applies dev) or `workflow_dispatch` (manual control for all environments).
-
-```mermaid
-flowchart TD
-    A([push to main\nor workflow_dispatch]) --> B
-
-    B[validate\nterraform fmt · tflint · Checkov]
-    B --> C[terraform plan\n5 environments in parallel]
-    C --> D{trigger type?}
-
-    D -->|push to main| E[apply → dev\nautomatic]
-    D -->|workflow_dispatch\nenvironment=dev + action=apply| E
-
-    D -->|workflow_dispatch\nenvironment=test + action=apply|    F[apply → test]
-    D -->|workflow_dispatch\nenvironment=perf + action=apply|    G[apply → perf]
-    D -->|workflow_dispatch\nenvironment=staging + action=apply| H[apply → staging\nrequires approval]
-    D -->|workflow_dispatch\nenvironment=prod + action=apply|    I[apply → prod\nrequires approval]
+    E -->|Yes| F[build and push to ECR]
+    F --> G[deploy to dev]
+    G --> H{workflow_dispatch?}
+    H -->|env=test| I[deploy to test]
+    H -->|env=perf| J[deploy to perf]
+    H -->|env=staging| K[deploy to staging - approval required]
+    H -->|env=prod| L[deploy to prod - approval required]
 ```
 
 ### Key Design Points
