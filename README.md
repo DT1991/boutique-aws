@@ -93,7 +93,7 @@ bash terraform/bootstrap/create-state-backend.sh
 # 2. Create GitHub Actions IAM roles (one-time setup)
 cd terraform/github-actions
 terraform init
-terraform apply -var="github_repo=<your-github-username>/boutique-aws"
+terraform apply -var="github_repo=DT1991/boutique-aws"
 terraform output github_secrets_setup   # copy these values to GitHub Secrets
 ```
 
