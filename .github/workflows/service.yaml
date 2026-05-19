@@ -8,9 +8,16 @@ name: Service Pipeline
 on:
   push:
     branches: [main, "release/**"]
-    paths-ignore: ["terraform/**", "docs/**", "*.md"]
+    paths:
+      - "src/**"
+      - "docker/**"
+      - "helm/**"
   pull_request:
     branches: [main]
+    paths:
+      - "src/**"
+      - "docker/**"
+      - "helm/**"
   workflow_dispatch:
     inputs:
       environment:
